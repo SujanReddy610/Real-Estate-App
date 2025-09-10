@@ -48,30 +48,32 @@ import Login from "./pages/Login";
 
 // PrivateRoute for protected pages
 function PrivateRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading)
-    return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <h3>Loading...</h3>
-      </div>
-    );
+    return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>;
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  return user ? children : <Navigate to="/login" replace />;
 }
 
 // PublicRoute for login/signup pages
 function PublicRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading)
-    return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <h3>Loading...</h3>
-      </div>
-    );
+    return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>;
 
-  return !isAuthenticated ? children : <Navigate to="/" replace />;
+  return !user ? children : <Navigate to="/" replace />;
+}
+
+// CatchAllRedirect component for undefined routes
+function CatchAllRedirect() {
+  const { user, loading } = useAuth();
+
+  if (loading)
+    return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>;
+
+  return <Navigate to={user ? "/" : "/login"} replace />;
 }
 
 export default function App() {
@@ -125,16 +127,8 @@ export default function App() {
               }
             />
 
-            {/* Catch-all redirect */}
-            <Route
-              path="*"
-              element={
-                <Navigate
-                  to={useAuth().isAuthenticated ? "/" : "/login"}
-                  replace
-                />
-              }
-            />
+            {/* Catch-all route */}
+            <Route path="*" element={<CatchAllRedirect />} />
           </Routes>
         </main>
         <Footer />
