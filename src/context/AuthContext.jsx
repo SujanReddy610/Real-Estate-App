@@ -241,13 +241,28 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(
-    () => JSON.parse(localStorage.getItem("user")) || null
-  );
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem("user");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [loading, setLoading] = useState(true);
 
+  const isAuthenticated = !!user;
+
+  // Signup function
   async function signup(email, password) {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (trimmedPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
+
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      trimmedEmail,
+      trimmedPassword
+    );
     const firebaseUser = userCredential.user;
     const u = { uid: firebaseUser.uid, email: firebaseUser.email };
     setUser(u);
@@ -255,8 +270,16 @@ export function AuthProvider({ children }) {
     return u;
   }
 
+  // Login function
   async function login(email, password) {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      trimmedEmail,
+      trimmedPassword
+    );
     const firebaseUser = userCredential.user;
     const u = { uid: firebaseUser.uid, email: firebaseUser.email };
     setUser(u);
@@ -264,6 +287,7 @@ export function AuthProvider({ children }) {
     return u;
   }
 
+  // Logout function
   function logout() {
     return signOut(auth).then(() => {
       setUser(null);
@@ -271,6 +295,7 @@ export function AuthProvider({ children }) {
     });
   }
 
+  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -286,7 +311,11 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  const value = { user, signup, login, logout };
+  const value = { user, isAuthenticated, loading, signup, login, logout };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 }

@@ -176,16 +176,23 @@
 //     </div>
 //   );
 // }
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -198,20 +205,28 @@ export default function Login() {
 
     try {
       await login(form.email, form.password);
-      navigate("/"); // Redirect to homepage after successful login
+      navigate("/", { replace: true }); // Redirect to home after login
     } catch (err) {
       // Handle Firebase error codes
-      if (err.code === "auth/user-not-found") {
-        setError("No user found with this email");
-      } else if (err.code === "auth/wrong-password") {
-        setError("Incorrect password");
-      } else {
-        setError(err.message || "Failed to login");
+      switch (err.code) {
+        case "auth/user-not-found":
+          setError("No user found with this email");
+          break;
+        case "auth/wrong-password":
+          setError("Incorrect password");
+          break;
+        case "auth/invalid-email":
+          setError("Invalid email address");
+          break;
+        default:
+          setError(err.message || "Failed to login");
       }
     } finally {
       setLoading(false);
     }
   };
+
+  if (authLoading) return <p>Checking authentication...</p>;
 
   return (
     <div className="col-md-6 offset-md-3 mt-5">
@@ -249,4 +264,5 @@ export default function Login() {
     </div>
   );
 }
+
 
