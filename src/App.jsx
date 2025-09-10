@@ -49,14 +49,28 @@ import Login from "./pages/Login";
 // PrivateRoute for protected pages
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return <p>Loading...</p>;
+
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <h3>Loading...</h3>
+      </div>
+    );
+
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 // PublicRoute for login/signup pages
 function PublicRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return <p>Loading...</p>;
+
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <h3>Loading...</h3>
+      </div>
+    );
+
   return !isAuthenticated ? children : <Navigate to="/" replace />;
 }
 
@@ -84,6 +98,14 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <div>Profile - protected</div>
+                </PrivateRoute>
+              }
+            />
 
             {/* Public routes */}
             <Route
@@ -103,18 +125,16 @@ export default function App() {
               }
             />
 
-            {/* Profile protected route example */}
+            {/* Catch-all redirect */}
             <Route
-              path="/profile"
+              path="*"
               element={
-                <PrivateRoute>
-                  <div>Profile - protected</div>
-                </PrivateRoute>
+                <Navigate
+                  to={useAuth().isAuthenticated ? "/" : "/login"}
+                  replace
+                />
               }
             />
-
-            {/* Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
         <Footer />
@@ -122,4 +142,5 @@ export default function App() {
     </AuthProvider>
   );
 }
+
 
